@@ -26,45 +26,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 
-public class ScanAction implements Action{
+public class GoToSleepAction implements Action{
     Status status = Status.IDLE;
     private ElapsedTime runtime;
-    double initialTime = runtime.seconds();
+    double initialTime;
     double delay;
-    enum State{ CYN, MAG, YLW};
-    State localState;
-    private ColorSensor color;
-    ScanAction(ElapsedTime runtime, ColorSensor color, State localState)
+    public GoToSleepAction(double delay)
     {
-        this.localState = localState;
-        this.color = color;
-        this.runtime = runtime;
-    }   
-    private State scan()
-    {
-        int r = color.red();
-        int g = color.green();
-        int b = color.blue();
-        State state = State.CYN;
-        if (r <= b && r <= g)
-        {
-            state = State.CYN;                
-        }     
-        if (g <= r && g <= b)
-        {
-            state = State.MAG;                
-        }     
-        if (b <= g && b <= r)
-        {
-            state = State.YLW;                
-        }     
-        return state;
-    }
+        this.delay = delay;
+    }  
     @Override
     public Status execute(){
         switch (status){
             case IDLE:
-                localState = scan();
+                initialTime = runtime.seconds();
                 status = Status.RUNNING;
                 break;
             case RUNNING:
@@ -77,5 +52,4 @@ public class ScanAction implements Action{
         }   
         return status;
     }
-    
 }

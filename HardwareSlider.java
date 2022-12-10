@@ -21,6 +21,8 @@ public class HardwareSlider
     private double COUNTS_PER_ARM_REV;
     private double COUNTS_PER_mm;
     private HardwareMap hwMap;
+    public List<Double> positions = new ArrayList<>();
+
 
     public HardwareSlider()
     {
@@ -32,6 +34,11 @@ public class HardwareSlider
         this.COUNTS_PER_MOTOR_REV = COUNTS_PER_MOTOR_REV;
         this.WINCH_RADIUS = WINCH_RADIUS;
         this.hwMap = hwMap;
+        positions.add(0.0);     //intake
+        positions.add(150.0);   //coaster
+        positions.add(1100.0);  //low pole
+        positions.add(370.0);   //med pole
+        positions.add(1100.0);  //high pole
         Slider = hwMap.get(DcMotor.class, "SL");
         COUNTS_PER_mm = COUNTS_PER_MOTOR_REV /( WINCH_RADIUS * 2 * Math.PI);
         Slider.setDirection(DcMotor.Direction.FORWARD);
@@ -41,6 +48,11 @@ public class HardwareSlider
         Slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Slider.setPower(SLIDE_POWER);
     }
+    
+    public boolean isSliding() {
+        return Slider.isBusy();
+    }
+    
     public double getExtension()
     {
         return (double)(Slider.getCurrentPosition()/COUNTS_PER_mm);

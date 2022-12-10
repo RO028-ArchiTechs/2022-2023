@@ -20,29 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 
-@Disabled   /// codul acesta este DECRĂPAT
-@TeleOp(name="TelepMAIN", group="Iterative Opmode")
-public class TeleMain extends OpMode
+@TeleOp(name="TeleopMAIN", group="Iterative Opmode")
+public class TeleopMain extends OpMode
 {
     
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
    
     // Hardware declarations
-    private HardwareDrivetrainMecanum localDrivetrain;
-    private HardwareSlider localSlider;
-    private HardwareGripper localGripper;
-    private HardwarePivot localPivot;
-    private HardwareWrist localWrist;
+    private HardwareRobot robot;
     
     // hardware constants
-    private double COUNTS_PER_MOTOR_REV_goBilda = 1120.0;
-    private double DRIVE_GEAR_REDUCTION = 1.0;
-    private double WHEEL_CIRCUMFERENCE_MM_goBilda = 100.0 * Math.PI;
-    private double COUNTS_PER_MOTOR_REV_Neverest40 = 1120.0;
-    private double COUNTS_PER_MOTOR_TNADO = 1440.0;
-    private double WINCH_RADIUS = 56.0;
-    private double ARM_REDUCTION = 10.0;
     private double GRIP_POSITION = 0.3;
     private double RELEASE_POSITION = 0.18;
     private double ARM_SPEED_UP = 0.1;
@@ -70,7 +58,7 @@ public class TeleMain extends OpMode
     private double gripping;    //parametric
     private double sliding;     //milimeters
     
-    public TeleMain()
+    public TeleopMain()
     {
         //empty Constructor (inside an OpMode and is thus _acceptable_)
     }
@@ -92,7 +80,7 @@ public class TeleMain extends OpMode
     
     private void armSetPosition( double t)
     {
-        localPivot.pivot((1.0-t)*ARM_LOWER_POSITION + t*ARM_UPPER_POSITION);
+        robot.pivot.pivot((1.0-t)*ARM_LOWER_POSITION + t*ARM_UPPER_POSITION);
 
     }
     
@@ -105,19 +93,13 @@ public class TeleMain extends OpMode
         telemetry.addData("Status", "Initialized");
         prevgamepad = new Gamepad();
         copyGamepad(gamepad1, prevgamepad);
-        localDrivetrain = new HardwareDrivetrainMecanum(hardwareMap, COUNTS_PER_MOTOR_REV_goBilda, DRIVE_GEAR_REDUCTION, WHEEL_CIRCUMFERENCE_MM_goBilda);
-        localSlider = new HardwareSlider(hardwareMap, COUNTS_PER_MOTOR_REV_Neverest40, WINCH_RADIUS);
-        localGripper = new HardwareGripper(hardwareMap, GRIP_POSITION, RELEASE_POSITION);
-        localWrist = new HardwareWrist(hardwareMap, WRIST_LOWER_POSITION, WRIST_UPPER_POSITION);
-        localPivot = new HardwarePivot(hardwareMap, COUNTS_PER_MOTOR_TNADO, ARM_REDUCTION);
-        localPivot.setLimits(ARM_LOWER_POSITION, ARM_UPPER_POSITION);
         
         gripping = 0.0;
         armPosition = 0.0;
         smootharmPosition = 0.0;
-        localGripper.grip(gripping);
+        robot.gripper.grip(gripping);
         armSetPosition(armPosition);
-        localWrist.setPosition((localPivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
+        robot.wrist.setPosition((robot.pivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
         
         telemetry.addData("Say", "To infinity and beyond!");
         localMode = Mode.AUTO;
@@ -129,7 +111,7 @@ public class TeleMain extends OpMode
      */
     @Override
     public void init_loop() {
-        telemetry.addData("pivot", "c: %.3f; t: %.3f", localPivot.getAngle(), localPivot.getTarget());
+        telemetry.addData("pivot", "c: %.3f; t: %.3f", robot.pivot.getAngle(), robot.pivot.getTarget());
     }
 
     /*
@@ -161,9 +143,9 @@ public class TeleMain extends OpMode
             //height cycler logic
             cycler = (!prevgamepad.dpad_up && gamepad1.dpad_up ? cycler+1 : cycler);
             cycler = (!prevgamepad.dpad_down && gamepad1.dpad_down ? cycler-1: cycler);
-            cycler = Range.clip(cycler, 0, localSlider.positions.size()-1);
+            cycler = Range.clip(cycler, 0, robot.slider.positions.size()-1);
             gripping = (!prevgamepad.x && gamepad1.x ? 1.0 - gripping : gripping);
-            sliding = localSlider.positions.get(cycler);
+            sliding = robot.slider.positions.get(cycler);
             armPosition = (cycler>2 ? 1.0 : 0.0);
             break;
             case MANUAL:
@@ -187,22 +169,22 @@ public class TeleMain extends OpMode
         // sending calculated values to the hardware
         smootharmPosition = (armPosition > 0.35 ? (1.0-ARM_SPEED_UP)*smootharmPosition + ARM_SPEED_UP*armPosition : (1.0-ARM_SPEED_DOWN)*smootharmPosition + ARM_SPEED_DOWN*armPosition);
         armSetPosition(smootharmPosition);
-        localWrist.setPosition((localPivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
-        localGripper.grip(gripping);
-        localSlider.slide(sliding);
-        localDrivetrain.DriveWPower(localDrivetrain.calcPower(drive, strafe, turn, speed));
+        robot.wrist.setPosition((robot.pivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
+        robot.gripper.grip(gripping);
+        robot.slider.slide(sliding);
+        robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
         
         //printing useful information
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("MODE", "" + localMode.toString());
-        telemetry.addData("Slider", "t: %.2f, c: %.2f", sliding, localSlider.getExtension());
-        telemetry.addData("Pivot", "t: %.2f, c: %.2f", localPivot.getTarget(), localPivot.getAngle());
+        telemetry.addData("Slider", "t: %.2f, c: %.2f", sliding, robot.slider.getExtension());
+        telemetry.addData("Pivot", "t: %.2f, c: %.2f", robot.pivot.getTarget(), robot.pivot.getAngle());
         telemetry.addData("Gripper", "g: %.2f", gripping);
         telemetry.update();
     }
 
     @Override
     public void stop() {
-        localSlider.slide(localSlider.positions.get(0));
+        robot.slider.slide(robot.slider.positions.get(0));
     }
 }

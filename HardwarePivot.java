@@ -61,6 +61,9 @@ public class HardwarePivot
         return (double)(Pivot.getTargetPosition()/COUNTS_PER_deg);
         
     }
+        public boolean isPivoting(){
+            return Pivot.isBusy();
+        }
     
      
     public void pivot(double pos)

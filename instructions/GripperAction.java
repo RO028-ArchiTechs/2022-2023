@@ -8,7 +8,7 @@ public class GripperAction implements Action {
     private double grip_position;
     private HardwareGripper localGripper;
     
-    GripperAction (double grip_position, HardwareGripper localGripper) {
+    public GripperAction (double grip_position, HardwareGripper localGripper) {
         this.grip_position = grip_position;
         this.localGripper = localGripper;
     }

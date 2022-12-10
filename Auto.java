@@ -17,6 +17,7 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.exception.RobotCoreException;
 import org.firstinspires.ftc.robotcore.external.State;
 import org.firstinspires.ftc.teamcode.instructions.DriveAction;
+import org.firstinspires.ftc.teamcode.instructions.GripperAction;
 import java.io.*;
 import java.util.*;
 import java.util.HashMap;
@@ -97,15 +98,15 @@ public class Auto extends LinearOpMode
         int g = color.green();
         int b = color.blue();
         State state = State.CYN;
-        if (r <=b && r<=g )
+        if (r <= b && r <= g)
         {
             state = State.CYN;                
         }     
-        if (g <=r && g<=b )
+        if (g <= r && g <= b)
         {
             state = State.MAG;                
         }     
-        if (b <=g && b<=r )
+        if (b <= g && b <= r)
         {
             state = State.YLW;                
         }     
@@ -129,11 +130,18 @@ public class Auto extends LinearOpMode
         positions.add(1200.0);  //low pole
         positions.add(370.0);   //medium pole
         positions.add(1200.0);  //high pole
+        actions.add(new DriveAction( 65.0, 0.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 0.0, -160.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( -65.0, 0.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 65.0, 160.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new GripperAction(GRIP_POSITION, localGripper));
+        actions.add(new DriveAction( 150.0, 0.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 0.0, 50.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 80.0, 0.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 65.0, 160.0, 0.0, 0.0, localDrivetrain));
         
-        actions.add(new DriveAction( 100.0, 0.0, 0.0, 0.0, localDrivetrain));  
-        actions.add(new DriveAction( 0.0, 100.0, 0.0, 0.0, localDrivetrain));
-        actions.add(new DriveAction(-100.0, 0.0, 0.0, 0.0, localDrivetrain));
-        actions.add(new DriveAction( 0.0,-100.0, 0.0, 0.0, localDrivetrain));
+        actions.add(new DriveAction( 400.0, 0.0, 0.0, 0.0, localDrivetrain));
+        
         telemetry.addData("Status", "Initialized");
         
         
@@ -141,20 +149,21 @@ public class Auto extends LinearOpMode
         waitForStart();
         runtime.reset();
         int i = 0; 
-            while(opModeIsActive() && i<=actions.size() )
+            while(opModeIsActive() && i<actions.size() )
         {
-            switch(actions.get(0).execute())
+            switch(actions.get(i).execute())
             {
                 case IDLE:
-                    telemetry.addData("EXEC", " %d", i);
+                    telemetry.addData("START", " %d", i);
                 break;
                 case RUNNING:
-                    telemetry.addData("EXEC", " %d", i);
+                    telemetry.addData("RUNNING", " %d", i);
                 break;
                 case DONE:
                     ++i; 
                 break;
             }
+            telemetry.update();
         }
     }
     
