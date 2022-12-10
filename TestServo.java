@@ -54,7 +54,7 @@ import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name="TestServo", group="Linear Opmode")
 
-public class ServoTest extends LinearOpMode {
+public class TestServo extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -65,7 +65,7 @@ public class ServoTest extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        servoArm  = hardwareMap.get(Servo.class, "S");
+        servoArm  = hardwareMap.get(Servo.class, "WST");
 
         waitForStart();
         runtime.reset();

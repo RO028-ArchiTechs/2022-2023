@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.external.State;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -15,8 +16,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.exception.RobotCoreException;
-import org.firstinspires.ftc.robotcore.external.State;
-import org.firstinspires.ftc.teamcode.instructions.DriveAction;
 import java.io.*;
 import java.util.*;
 import java.util.HashMap;
@@ -25,9 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 
-@Disabled
-@Autonomous(name="Auto", group="Iterative Opmode")
-public class Auto extends LinearOpMode
+@Autonomous(name="RED Auto", group="Iterative Opmode")
+public class Autist extends LinearOpMode
 {
 
     // Declare OpMode members.
@@ -52,7 +50,6 @@ public class Auto extends LinearOpMode
     private double minSpeed = 0.1;
     private int cycler = 0;
     private List<Double> positions = new ArrayList<>();
-    private List<Action> actions = new ArrayList<>();
     enum State{ CYN, MAG, YLW};
     State localState;
         
@@ -129,32 +126,69 @@ public class Auto extends LinearOpMode
         positions.add(1200.0);  //low pole
         positions.add(370.0);   //medium pole
         positions.add(1200.0);  //high pole
-        
-        actions.add(new DriveAction( 100.0, 0.0, 0.0, 0.0, localDrivetrain));  
-        actions.add(new DriveAction( 0.0, 100.0, 0.0, 0.0, localDrivetrain));
-        actions.add(new DriveAction(-100.0, 0.0, 0.0, 0.0, localDrivetrain));
-        actions.add(new DriveAction( 0.0,-100.0, 0.0, 0.0, localDrivetrain));
         telemetry.addData("Status", "Initialized");
         
         
         
         waitForStart();
         runtime.reset();
-        int i = 0; 
-            while(opModeIsActive() && i<=actions.size() )
+        /// AUTO STARTS HERE ///
+        if(opModeIsActive())
         {
-            switch(actions.get(0).execute())
+            
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(60.0, 0.0, 0.0, defSpeed));
+            sleep(1500);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(0.0, -160.0, 0.0, defSpeed));
+            sleep(1500);
+            localGripper.grip(RELEASE_POSITION);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(-60.0, 0.0, 0.0, defSpeed));
+            sleep(1500);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(0.0, 160.0, 0.0, defSpeed));
+            sleep(1500);
+            
+            localGripper.grip(GRIP_POSITION);
+            sleep(2000); 
+            
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(150.0, 0.0, 0.0, defSpeed));
+            sleep(1500);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(0.0, 50.0, 0.0, defSpeed));
+            sleep(1500);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(80.0, 0.0, 0.0, defSpeed));
+            sleep(1500);
+            localState = scan();
+            sleep(1500);
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(80.0, 0.0, 0.0, defSpeed));
+            sleep(1500);
+            telemetry.addData("COLOR:", ""+localState.toString());
+            telemetry.update();
+            switch(localState)
             {
-                case IDLE:
-                    telemetry.addData("EXEC", " %d", i);
+                case CYN:
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(0.0, -350.0, 0.0, defSpeed));
+            sleep(1500);
                 break;
-                case RUNNING:
-                    telemetry.addData("EXEC", " %d", i);
+                case MAG:
                 break;
-                case DONE:
-                    ++i; 
+                case YLW:
+            localDrivetrain.DriveDistance(localDrivetrain.calcVector(0.0, 350.0, 0.0, defSpeed));
+            sleep(1500);
                 break;
+            } 
+            // reset slider position
+            //localSlider.slide(positions.get(0));
+            /*
+            while(opModeIsActive())
+            {
+                localState = scan();
+                telemetry.addData("TIME", "%.3f", runtime.seconds());
+                telemetry.addData("Color", "R%d, G%d, B%d", color.red() ,color.green(), color.blue());
+            //    telemetry.addData("HUE", "%.3f", scan());
+                telemetry.addData("State", ""+ localState.toString());
+                telemetry.update();
+                sleep(100);
             }
+            */
+            sleep(15000);
         }
     }
     

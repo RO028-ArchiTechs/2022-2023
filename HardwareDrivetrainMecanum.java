@@ -190,7 +190,7 @@ public class HardwareDrivetrainMecanum
     
     public boolean isDriving()
     {
-        return ((frontRightDrive.isBusy()?1:0)+(frontLeftDrive.isBusy()?1:0)+(backLeftDrive.isBusy()?1:0)+(backRightDrive.isBusy()?1:0)>2);
+        return ((frontRightDrive.isBusy() ? 1 : 0) + (frontLeftDrive.isBusy() ? 1 : 0) + (backLeftDrive.isBusy() ? 1 : 0) + (backRightDrive.isBusy() ? 1 : 0) > 2);
         
     }
     

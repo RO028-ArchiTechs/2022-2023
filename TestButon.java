@@ -26,7 +26,7 @@ import com.qualcomm.robotcore.exception.RobotCoreException;
 @Disabled
 @TeleOp(name="Button Test", group="Iterative Opmode")
 
-public class ButonMata extends OpMode
+public class TestButon extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();

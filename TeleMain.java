@@ -31,39 +31,40 @@ public class TeleMain extends OpMode
     private HardwareDrivetrainMecanum localDrivetrain;
     private HardwareSlider localSlider;
     private HardwareGripper localGripper;
-    private Servo wrist;
-    private Servo arm;
+    private HardwarePivot localPivot;
+    private HardwareWrist localWrist;
     
 
-    // useful constants
+    // hardware constants
     private double COUNTS_PER_MOTOR_REV_goBilda = 1120.0;
     private double DRIVE_GEAR_REDUCTION = 1.0;
     private double WHEEL_CIRCUMFERENCE_MM_goBilda = 100.0 * Math.PI;
     private double COUNTS_PER_MOTOR_REV_Neverest40 = 1120.0;
+    private double COUNTS_PER_MOTOR_TNADO = 1440.0;
     private double WINCH_RADIUS = 56.0;
+    private double ARM_REDUCTION = 10.0;
     private double GRIP_POSITION = 0.3;
     private double RELEASE_POSITION = 0.18;
     private double ARM_SPEED_UP = 0.1;
     private double ARM_SPEED_DOWN = 0.05;
-    private double ARM_LOWER_POSITION = 0.142;
-    private double ARM_UPPER_POSITION = 0.737;
-    private double WRIST_LOWER_POSITION = 0.950;
-//    private double WRIST_UPPER_POSITION = 0.250;
-    private double WRIST_UPPER_POSITION = WRIST_LOWER_POSITION;
+    private double ARM_LOWER_POSITION = 0.0;
+    private double ARM_UPPER_POSITION = 146.0;
+    private double WRIST_UPPER_POSITION = 0.316;
+    private double WRIST_LOWER_POSITION = 1.0;
     
     // sensible defaults
     private double DRIVE_MULTIPLIER = 1.0;  // these 3 variables are used to prefferentially restrict movement speed on one axis or another; to alter the overall drive speed please change defSpeed.
-    private double STRAFE_MULTIPLIER = 1.0;  //ca sa nu mai rastoarne hans robotu
+    private double STRAFE_MULTIPLIER = 1.2;  //ca sa nu mai rastoarne hans robotu
     private double TURN_MULTIPLIER = 0.8;  //ca sa nu mai rastoarne hans robotu
-    private double defSpeed = 0.42;
+    private double defSpeed = 0.32;
     private double minSpeed = 0.15;
     private double MANUAL_SLIDE_SPEED = 5.0;
     private double MANUAL_GRIP_SPEED = 0.05;
      
     // state variables
     private int cycler = 0;
-    private double arming = 0;
-    private double smootharming = 0;
+    private double armPosition = 0;
+    private double smootharmPosition = 0;
     private List<Double> positions = new ArrayList<>();
     enum Mode {AUTO, MANUAL}; 
     private Mode localMode; 
@@ -93,8 +94,8 @@ public class TeleMain extends OpMode
     
     private void armSetPosition( double t)
     {
-        arm.setPosition((1.0-t)*ARM_LOWER_POSITION + t*ARM_UPPER_POSITION);
-        wrist.setPosition((1.0-t)*WRIST_LOWER_POSITION + t*WRIST_UPPER_POSITION);
+        localPivot.pivot((1.0-t)*ARM_LOWER_POSITION + t*ARM_UPPER_POSITION);
+
     }
     
     /*
@@ -109,16 +110,20 @@ public class TeleMain extends OpMode
         localDrivetrain = new HardwareDrivetrainMecanum(hardwareMap, COUNTS_PER_MOTOR_REV_goBilda, DRIVE_GEAR_REDUCTION, WHEEL_CIRCUMFERENCE_MM_goBilda);
         localSlider = new HardwareSlider(hardwareMap, COUNTS_PER_MOTOR_REV_Neverest40, WINCH_RADIUS);
         localGripper = new HardwareGripper(hardwareMap, GRIP_POSITION, RELEASE_POSITION);
-        arm = hardwareMap.get(Servo.class, "ARM");
-        wrist = hardwareMap.get(Servo.class, "WST");
+        localWrist = new HardwareWrist(hardwareMap, WRIST_LOWER_POSITION, WRIST_UPPER_POSITION);
+        localPivot = new HardwarePivot(hardwareMap, COUNTS_PER_MOTOR_TNADO, ARM_REDUCTION);
+        localPivot.setLimits(ARM_LOWER_POSITION, ARM_UPPER_POSITION);
         gripping = 0.0;
-        arming = 0.0;
-        smootharming = 0.0;
+        armPosition = 0.0;
+        smootharmPosition = 0.0;
         localGripper.grip(gripping);
-        armSetPosition(arming);
+        armSetPosition(armPosition);
+        localWrist.setPosition((localPivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
         positions.add(0.0);     //intake
         positions.add(150.0);   //coaster
-        positions.add(1200.0);  //low pole
+        positions.add(1150.0);  //low pole
+        positions.add(370.0);   //med pole
+        positions.add(1150.0);  //high pole
         telemetry.addData("Say", "To infinity and beyond!");
         localMode = Mode.AUTO;
     }
@@ -129,6 +134,7 @@ public class TeleMain extends OpMode
      */
     @Override
     public void init_loop() {
+        telemetry.addData("pivot", "c: %.3f; t: %.3f", localPivot.getAngle(), localPivot.getTarget());
     }
 
     /*
@@ -163,14 +169,15 @@ public class TeleMain extends OpMode
             cycler = Range.clip(cycler, 0, positions.size()-1);
             gripping = (!prevgamepad.x && gamepad1.x ? 1.0 - gripping : gripping);
             sliding = positions.get(cycler);
-            arming = (cycler>2 ? 1.0 : 0.0);
+            armPosition = (cycler>2 ? 1.0 : 0.0);
             break;
             case MANUAL:
             //separate control per-axis
             gripping = Range.clip(gripping + MANUAL_GRIP_SPEED * ( gamepad1.dpad_right ? 1.0 : (gamepad1.dpad_left ? -1.0 : 0.0)), 0.0, 1.0);
             sliding = Range.clip(sliding + MANUAL_SLIDE_SPEED * ( gamepad1.dpad_up ? 1.0 : (gamepad1.dpad_down ? -1.0 : 0.0)), 0.0, 1330.0);
-            arming = (!prevgamepad.a && gamepad1.a ? 0.0 : arming);
-            arming = (!prevgamepad.b && gamepad1.b ? 1.0 : arming);
+            // armPosition = (!prevgamepad.a && gamepad1.a ? 0.0 : armPosition);
+            // armPosition = (!prevgamepad.b && gamepad1.b ? 1.0 : armPosition);
+            armPosition = Range.clip(armPosition-gamepad2.right_stick_y, ARM_LOWER_POSITION, ARM_UPPER_POSITION);
             break;
         }
         
@@ -183,8 +190,9 @@ public class TeleMain extends OpMode
         copyGamepad(gamepad1, prevgamepad);        
         
         // sending calculated values to the hardware
-        smootharming = (arming > 0.35 ? (1.0-ARM_SPEED_UP)*smootharming + ARM_SPEED_UP*arming : (1.0-ARM_SPEED_DOWN)*smootharming + ARM_SPEED_DOWN*arming);
-        armSetPosition(smootharming);
+        smootharmPosition = (armPosition > 0.35 ? (1.0-ARM_SPEED_UP)*smootharmPosition + ARM_SPEED_UP*armPosition : (1.0-ARM_SPEED_DOWN)*smootharmPosition + ARM_SPEED_DOWN*armPosition);
+        armSetPosition(smootharmPosition);
+        localWrist.setPosition((localPivot.getAngle())/(ARM_UPPER_POSITION-ARM_LOWER_POSITION));
         localGripper.grip(gripping);
         localSlider.slide(sliding);
         localDrivetrain.DriveWPower(localDrivetrain.calcPower(drive, strafe, turn, speed));
@@ -193,6 +201,7 @@ public class TeleMain extends OpMode
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("MODE", "" + localMode.toString());
         telemetry.addData("Slider", "t: %.2f, c: %.2f", sliding, localSlider.getExtension());
+        telemetry.addData("Pivot", "t: %.2f, c: %.2f", localPivot.getTarget(), localPivot.getAngle());
         telemetry.addData("Gripper", "g: %.2f", gripping);
         telemetry.update();
     }

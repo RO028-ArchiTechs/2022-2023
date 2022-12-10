@@ -36,7 +36,7 @@ public class HardwareGripper
     
     public void grip(double gripping)
     {
-        GripLeft.setPosition((1.0-gripping)*positions.get("LEFT_RELEASE") + gripping*positions.get("LEFT_GRIP"));
-        GripRight.setPosition((1.0-gripping)*positions.get("RIGHT_RELEASE") + gripping*positions.get("RIGHT_GRIP"));
+        GripLeft.setPosition((1.0 - gripping) * positions.get("LEFT_RELEASE") + gripping * positions.get("LEFT_GRIP"));
+        GripRight.setPosition((1.0 - gripping) * positions.get("RIGHT_RELEASE") + gripping * positions.get("RIGHT_GRIP"));
     }
 }
