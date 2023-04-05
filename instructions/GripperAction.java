@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.instructions;
-import org.firstinspires.ftc.teamcode.Action;
-import org.firstinspires.ftc.teamcode.HardwareGripper;
+import org.firstinspires.ftc.teamcode.lib.Action;
+import org.firstinspires.ftc.teamcode.lib.HardwareGripper;
 
 public class GripperAction implements Action {
     

@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import org.firstinspires.ftc.robotcore.external.State;
+import org.firstinspires.ftc.robotcore.external.State; //this should not be here but I can't delete it for some goddamn reason
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.exception.RobotCoreException;
+import org.firstinspires.ftc.teamcode.autorecorder.EncodeController;
 import java.io.*;
 import java.util.*;
 import java.util.HashMap;
@@ -21,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 
-@TeleOp(name="TeleopMAIN", group="Iterative Opmode")
-public class TeleopMain extends OpMode
+@TeleOp(name="Geo's Auto recorder", group="Iterative Opmode")
+public class AutoRecorder extends OpMode
 {
     
     // Declare OpMode members.
@@ -37,13 +38,18 @@ public class TeleopMain extends OpMode
     private double TURN_MULTIPLIER = 0.8;  //ca sa nu mai rastoarne hans robotu
     private double defSpeed = 0.39;
     private double minSpeed = 0.15;
-    private double HSLIDE_SPEED = 12.0;
+    private double HSLIDE_SPEED = 5;
     
     private double MANUAL_SLIDE_SPEED = 6.0;    // mm/iter
     private double MANUAL_ARM_SPEED = 3.0;      // deg/iter
     private double MANUAL_GRIP_SPEED = 0.1;     // mm/iter
     private double MANUAL_WRIST_SPEED = 0.005;  // parameter/iter
-     
+    
+    boolean prev_dpad_up = false;
+    boolean prev_dpad_down = false;
+    boolean prev_dpad_left = false;
+    boolean prev_dpad_right = false;
+    
     // state variables
     private int cycler = 0;
     private double armPosition = 0;
@@ -63,34 +69,13 @@ public class TeleopMain extends OpMode
     private boolean didDelay1;
     private boolean didDelay2;
     private double initialDelayTime;
+    private EncodeController controller;
     
     
-    public TeleopMain()
+    public AutoRecorder()
     {
         //empty Constructor (inside an OpMode and is thus _acceptable_)
     }
-    
-    // so that we may elegantly have state change detection 
-    Gamepad prevgamepad1;
-    Gamepad prevgamepad2;
-    
-    public void copyGamepad( Gamepad source, Gamepad target )
-    {
-        try{
-        target.copy(source);
-        }
-        catch(RobotCoreException gamepadfutut)
-        {
-            telemetry.addLine("C3V4 S3 FU7U l4 g4m3p4d");
-                // We never managed to get this exception thrown
-            telemetry.update();
-        }
-    }
-    
-    
-    
-    
-    
     
     private void delayGrip(double initialTime, double t1, double t2) 
     {
@@ -107,18 +92,29 @@ public class TeleopMain extends OpMode
         }
     }
     
+    private double multiplier(boolean increase, boolean decrease)
+    {
+        return  ( increase ?
+                    1.0
+                    :
+                    ( decrease ?
+                        -1.0 
+                        :
+                        0.0 
+                    ) 
+                );
+    }
+    
     /*
      * Code to run after the driver hits INIT
      */
     @Override
     public void init()
     {
+        
         robot = new HardwareRobot(hardwareMap);
+        controller = new EncodeController(this);
         telemetry.addData("Status", "Initialized");
-        prevgamepad1 = new Gamepad();
-        prevgamepad2 = new Gamepad();
-        copyGamepad(gamepad1, prevgamepad1);
-        copyGamepad(gamepad2, prevgamepad2);
         sliding = 0.0;
         wristing = 0;
         intakegripping = 0.0;
@@ -132,77 +128,37 @@ public class TeleopMain extends OpMode
         localState = State.INTAKE;
         
         telemetry.addData("Say", "To infinity and beyond!");
-        localMode = Mode.AUTO;
     }
     
-    private double multiplier(boolean increase, boolean decrease)
-    {
-        return  ( increase ?
-                    1.0
-                    :
-                    ( decrease ?
-                        -1.0 
-                        :
-                        0.0 
-                    ) 
-                );
-    }
 
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
     @Override
-    public void init_loop() {
+    public void init_loop() 
+    {
     }
 
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
     @Override
     public void start() {
+        controller.reset_runtime();
         runtime.reset();
     }
     
     @Override
     public void loop()
     {
-        //  E-E-E-EJECT!!!!!!
-        if( gamepad1.a&&gamepad1.b&&gamepad1.x&&gamepad1.y || gamepad2.a&&gamepad2.b&&gamepad2.x&&gamepad2.y )
-        {
-            telemetry.addData("EMERGENCY STOP", "%s", "plm");
-            stop(); // unfortunately this does nothing, idk why
-            // THE BELOW LINE CAUSES A SEGFAULT (NPE) ON PURPOSE
-            telemetry.addData("INVALID INDEX", "%.2f", robot.positions.get(-1));
-            // This is done to protect the robot from destroying itself
-            // in the event that an encoder cable
-        }
+        controller.write_state();
         
         // Drivetrain input on Gp1
-        double drive  = -gamepad1.left_stick_y;
-        double strafe =  gamepad1.left_stick_x;
-        double turn   = -gamepad1.right_stick_x;
-        double boost  =  gamepad1.right_trigger;
-        double shift  =  gamepad1.left_trigger;  
+        double drive  =  controller.get_left_stick_y();
+        double strafe = -controller.get_left_stick_x();
+        double turn   = -controller.get_right_stick_x();
+        double boost  =  controller.get_right_trigger();
+        double shift  =  controller.get_left_trigger();  
            
         /*
         */
         //toggles mode when driver presses the Logitech button 
-        localMode = 
-            (!prevgamepad1.guide && gamepad1.guide ? 
-                (localMode == Mode.AUTO ?
-                    Mode.MANUAL 
-                    :
-                    Mode.AUTO
-                )
-                : 
-                localMode
-            );
         
         // different input handling depending on current mode
-        switch(localMode)
-        {
-            case AUTO:
-            // FINITE STATE MACHINE
             switch(localState){
                 case INTAKE:
                     wristing = 0;
@@ -210,21 +166,25 @@ public class TeleopMain extends OpMode
                     armPosition = robot.ARM_LOWER_POSITION;
                      
                     intakegripping = 
-                        (!prevgamepad1.x && gamepad1.x ? 
-                            1.0 - intakegripping 
+                        (controller.get_x() ? 
+                            1.0 
                             : 
-                            intakegripping
+                            (  gamepad1.y ?
+                                0.0
+                                :
+                                intakegripping
+                            )
                         );
                     
                     intakesliding = Range.clip
                         ( intakesliding +
                         HSLIDE_SPEED *
-                        multiplier(gamepad1.dpad_up, gamepad1.dpad_down),
+                        multiplier(controller.get_dpad_up(), controller.get_dpad_down()),
                             0.0,
                             robot.HSLIDER_MAX_POSITION
                         );
                         
-                    if(!prevgamepad1.dpad_right && gamepad1.dpad_right)
+                    if(!prev_dpad_right && controller.get_dpad_right())
                     {
                         localState = State.TRANSFER;
                     }
@@ -237,7 +197,7 @@ public class TeleopMain extends OpMode
                     cycler = 0;
                     armPosition = robot.ARM_UPPER_POSITION;
                                  
-                    if(!prevgamepad1.dpad_right && gamepad1.dpad_right)
+                    if(!prev_dpad_right && controller.get_dpad_right())
                     {
                         doDelay = true;     // ultima urâțenie
                         didDelay1 = false;
@@ -245,7 +205,7 @@ public class TeleopMain extends OpMode
                         scoregripping = 1.0;
                         localState = State.SCORE;
                     }
-                    else if(!prevgamepad1.dpad_left && gamepad1.dpad_left)
+                    else if(!prev_dpad_left && controller.get_dpad_left())
                     {
                         localState = State.INTAKE;
                     }
@@ -261,16 +221,20 @@ public class TeleopMain extends OpMode
                     delayGrip(initialDelayTime, 0.8, 0.2);
                     
                     //height cycler logic
-                    cycler = (!prevgamepad1.dpad_up && gamepad1.dpad_up ? 
+                    cycler = (!prev_dpad_up && controller.get_dpad_up() ? 
                         cycler+1 : cycler);
-                    cycler = (!prevgamepad1.dpad_down && gamepad1.dpad_down ?
+                    cycler = (!prev_dpad_down && controller.get_dpad_down() ?
                         cycler-1: cycler);
                         
                     scoregripping = 
-                        (!prevgamepad1.x && gamepad1.x ? 
-                            1.0 - scoregripping 
+                        (controller.get_x() ? 
+                            1.0 
                             : 
-                            scoregripping
+                            (  controller.get_y() ?
+                                0.0
+                                :
+                                intakegripping
+                            )
                         );
                         
                     if(cycler>1)
@@ -278,12 +242,12 @@ public class TeleopMain extends OpMode
                         armPosition = robot.ARM_MID_POSITION;    
                     }
                     
-                    if(!prevgamepad1.dpad_right && gamepad1.dpad_right)
+                    if(!prev_dpad_right && controller.get_dpad_right())
                     {
                         scoregripping = 0.0;
                         localState = State.INTAKE;
                     }
-                    else if(!prevgamepad1.dpad_left && gamepad1.dpad_left)
+                    else if(!prev_dpad_left && controller.get_dpad_left())
                     {
                         localState = State.TRANSFER;
                     }
@@ -293,109 +257,7 @@ public class TeleopMain extends OpMode
             }
             cycler = Range.clip(cycler, 0, robot.positions.size()-1);
             sliding = robot.positions.get(cycler);
-            break;
             
-            case MANUAL:
-                // Hopefully this should never be needed
-                
-
-                robot.intakepivot.offset
-                (
-                    gamepad1.dpad_up ?
-                        1
-                        :
-                        (  gamepad1.dpad_down ?
-                            -1
-                            :
-                            0
-                        )
-                );
-                        
-                
-                /*                
-                armPosition = Range.clip
-                ( 
-                    armPosition + MANUAL_ARM_SPEED * 
-                    (   gamepad2.dpad_left ?
-                        1.0
-                        :
-                        ( gamepad2.dpad_right ?
-                            -1.0
-                            :
-                            0.0
-                        )
-                    ), 
-                    robot.ARM_LOWER_POSITION, 
-                    robot.ARM_UPPER_POSITION
-                );
-                
-                intakesliding = Range.clip
-                ( 
-                    intakesliding + MANUAL_SLIDE_SPEED * 
-                    (   gamepad2.dpad_up ?
-                        1.0
-                        :
-                        ( gamepad2.dpad_down ?
-                            -1.0
-                            :
-                            0.0
-                        )
-                    ), 
-                    0.0, 
-                    robot.HSLIDER_MAX_POSITION
-                );
-                    
-                sliding = Range.clip
-                (
-                    sliding + 
-                    MANUAL_SLIDE_SPEED * 
-                    ( gamepad1.dpad_up ? 
-                        1.0 
-                        :
-                        ( gamepad1.dpad_down ?
-                            -1.0
-                            :
-                            0.0
-                        )
-                    ),
-                    0.0,
-                    robot.VSLIDER_MAX_POSITION
-                );
-                
-                intakegripping = 
-                (!prevgamepad2.x && gamepad2.x ? 
-                    1.0 - intakegripping 
-                    : 
-                    intakegripping
-                );
-                
-                scoregripping = 
-                (!prevgamepad1.x && gamepad1.x ? 
-                    1.0 - scoregripping 
-                    : 
-                    scoregripping
-                );
-                
-                wristing = Range.clip
-                (
-                    wristing + 
-                    MANUAL_WRIST_SPEED * 
-                    ( gamepad1.dpad_left ? 
-                        1.0 
-                        :
-                        ( gamepad1.dpad_right ?
-                            -1.0
-                            :
-                            0.0
-                        )
-                    ),
-                    0.0,
-                    1.0
-                );
-                */
-                
-            break;
-        }
         
         // disabling boost when slider is above a certain height (mm)
         if(sliding > 500)
@@ -404,8 +266,11 @@ public class TeleopMain extends OpMode
         }
         double speed =  (1 - boost - shift) * defSpeed + boost + minSpeed * shift;
         // saving current gamepad state so we may compare against it n the next iteration        
-        copyGamepad(gamepad1, prevgamepad1);        
-        copyGamepad(gamepad2, prevgamepad2);        
+        
+        prev_dpad_up = controller.get_dpad_up();
+        prev_dpad_down = controller.get_dpad_down();
+        prev_dpad_left = controller.get_dpad_left();
+        prev_dpad_right = controller.get_dpad_right();
         
         // sending calculated values to the hardware
         // robot.GripIntakeServo.setPosition(intakegripping)
@@ -421,7 +286,7 @@ public class TeleopMain extends OpMode
         
         //printing useful information
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("MODE", "" + localMode.toString());
+        telemetry.addData("DEBUG", "drive %.2f" + -controller.get_left_stick_y());
         telemetry.addData("STATE", "" + localState.toString());
         telemetry.addData("VL SLIDER", " h = %.2f, E = %.2f", robot.vertsliderL.getTargetExtension(), robot.vertsliderL.getExtension());
         telemetry.addData("VR SLIDER", " h = %.2f, E = %.2f", robot.vertsliderL.getTargetExtension(), robot.vertsliderR.getExtension());
@@ -431,6 +296,12 @@ public class TeleopMain extends OpMode
         telemetry.addData("GRIP INTAKE", " t = %.2f", intakegripping);
         telemetry.addData("GRIP SCORE", " t = %.2f", scoregripping);
         telemetry.update();
+    }
+    
+    @Override
+    public void stop()
+    {
+        controller.write_final_state();
     }
 
     // @Override

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.lib;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -10,16 +10,15 @@ import java.util.*;
 
 public class HardwareGripper 
 {
-    public Servo GripLeft;
-    public Servo GripRight;
+    private Servo GripLeft;
+    private Servo GripRight;
     public double GRIP_POSITION;
     public double RELEASE_POSITION;
     
     Map<String, Double> positions = new HashMap<>(); //this still looks extremely ugly, WTF
-    HardwareMap hwMap;
 
     /*  CONSTRUCTOR  */
-    public HardwareGripper(HardwareMap hwMap, double GRIP_POSITION, double RELEASE_POSITION)
+    public HardwareGripper(Servo GripLeft, Servo GripRight, double GRIP_POSITION, double RELEASE_POSITION)
     {
         this.GRIP_POSITION = GRIP_POSITION;
         this.RELEASE_POSITION = RELEASE_POSITION;
@@ -27,9 +26,8 @@ public class HardwareGripper
         positions.put("LEFT_RELEASE", RELEASE_POSITION);
         positions.put("RIGHT_GRIP", GRIP_POSITION);
         positions.put("RIGHT_RELEASE", RELEASE_POSITION);
-        this.hwMap = hwMap;
-        GripLeft = hwMap.get(Servo.class, "GL");
-        GripRight = hwMap.get(Servo.class, "GR");
+        this.GripLeft = GripLeft;
+        this.GripRight = GripRight;
         GripLeft.setDirection(Servo.Direction.REVERSE);
         GripRight.setDirection(Servo.Direction.FORWARD);
     }

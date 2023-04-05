@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.instructions;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.teamcode.Action;
+import org.firstinspires.ftc.teamcode.lib.Action;
 
 
 public class ArmMovementAction implements Action {

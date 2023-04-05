@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.Math;
 
-@TeleOp(name="TeleopMAIN", group="Iterative Opmode")
-public class TeleopMain extends OpMode
+@TeleOp(name="TeleopMAIN fara Hslider", group="Iterative Opmode")
+public class TeleopMainSliderless extends OpMode
 {
     
     // Declare OpMode members.
@@ -37,7 +37,7 @@ public class TeleopMain extends OpMode
     private double TURN_MULTIPLIER = 0.8;  //ca sa nu mai rastoarne hans robotu
     private double defSpeed = 0.39;
     private double minSpeed = 0.15;
-    private double HSLIDE_SPEED = 12.0;
+    private double HSLIDE_SPEED = 5;
     
     private double MANUAL_SLIDE_SPEED = 6.0;    // mm/iter
     private double MANUAL_ARM_SPEED = 3.0;      // deg/iter
@@ -60,12 +60,11 @@ public class TeleopMain extends OpMode
     private double wristing;    //parametric
     private double arming;    //parametric
     private boolean doDelay; 
-    private boolean didDelay1;
-    private boolean didDelay2;
+    private boolean didDelay;
     private double initialDelayTime;
     
     
-    public TeleopMain()
+    public TeleopMainSliderless()
     {
         //empty Constructor (inside an OpMode and is thus _acceptable_)
     }
@@ -92,18 +91,14 @@ public class TeleopMain extends OpMode
     
     
     
-    private void delayGrip(double initialTime, double t1, double t2) 
+    private void delayGrip(double initialTime, double t) 
     {
-        if (!didDelay2 && runtime.time() > initialTime + t1 + t2)
-        {
-            wristing = 1.0;
-            cycler = 1;
-            didDelay2 = true;
-        }
-        if (!didDelay1 && runtime.time() > initialTime + t1)
+        if (!didDelay && runtime.time() > initialTime + t)
         {
             intakegripping = 0.0;
-            didDelay1 = true;
+            wristing = 1.0;
+            cycler = 1;
+            didDelay = true;
         }
     }
     
@@ -114,6 +109,7 @@ public class TeleopMain extends OpMode
     public void init()
     {
         robot = new HardwareRobot(hardwareMap);
+        robot.horizslider = null;
         telemetry.addData("Status", "Initialized");
         prevgamepad1 = new Gamepad();
         prevgamepad2 = new Gamepad();
@@ -132,7 +128,7 @@ public class TeleopMain extends OpMode
         localState = State.INTAKE;
         
         telemetry.addData("Say", "To infinity and beyond!");
-        localMode = Mode.AUTO;
+        localMode = Mode.MANUAL;
     }
     
     private double multiplier(boolean increase, boolean decrease)
@@ -178,8 +174,8 @@ public class TeleopMain extends OpMode
         }
         
         // Drivetrain input on Gp1
-        double drive  = -gamepad1.left_stick_y;
-        double strafe =  gamepad1.left_stick_x;
+        double drive  =  gamepad1.left_stick_y;
+        double strafe = -gamepad1.left_stick_x;
         double turn   = -gamepad1.right_stick_x;
         double boost  =  gamepad1.right_trigger;
         double shift  =  gamepad1.left_trigger;  
@@ -231,7 +227,6 @@ public class TeleopMain extends OpMode
                 break;
                 
                 case TRANSFER:
-                    scoregripping = 0.0;
                     intakesliding = 0.0;
                     wristing = 0.0;
                     cycler = 0;
@@ -240,9 +235,7 @@ public class TeleopMain extends OpMode
                     if(!prevgamepad1.dpad_right && gamepad1.dpad_right)
                     {
                         doDelay = true;     // ultima urâțenie
-                        didDelay1 = false;
-                        didDelay2 = false;
-                        scoregripping = 1.0;
+                        didDelay = false;
                         localState = State.SCORE;
                     }
                     else if(!prevgamepad1.dpad_left && gamepad1.dpad_left)
@@ -253,25 +246,19 @@ public class TeleopMain extends OpMode
                 
                 case SCORE:
                     
+                    scoregripping = 1.0;
                     if (doDelay)
                     {
                         initialDelayTime = runtime.time();
                     }
                     doDelay = false;
-                    delayGrip(initialDelayTime, 0.8, 0.2);
+                    delayGrip(initialDelayTime, 1.5);
                     
                     //height cycler logic
                     cycler = (!prevgamepad1.dpad_up && gamepad1.dpad_up ? 
                         cycler+1 : cycler);
                     cycler = (!prevgamepad1.dpad_down && gamepad1.dpad_down ?
                         cycler-1: cycler);
-                        
-                    scoregripping = 
-                        (!prevgamepad1.x && gamepad1.x ? 
-                            1.0 - scoregripping 
-                            : 
-                            scoregripping
-                        );
                         
                     if(cycler>1)
                     {
@@ -280,7 +267,6 @@ public class TeleopMain extends OpMode
                     
                     if(!prevgamepad1.dpad_right && gamepad1.dpad_right)
                     {
-                        scoregripping = 0.0;
                         localState = State.INTAKE;
                     }
                     else if(!prevgamepad1.dpad_left && gamepad1.dpad_left)
@@ -297,22 +283,6 @@ public class TeleopMain extends OpMode
             
             case MANUAL:
                 // Hopefully this should never be needed
-                
-
-                robot.intakepivot.offset
-                (
-                    gamepad1.dpad_up ?
-                        1
-                        :
-                        (  gamepad1.dpad_down ?
-                            -1
-                            :
-                            0
-                        )
-                );
-                        
-                
-                /*                
                 armPosition = Range.clip
                 ( 
                     armPosition + MANUAL_ARM_SPEED * 
@@ -392,7 +362,6 @@ public class TeleopMain extends OpMode
                     0.0,
                     1.0
                 );
-                */
                 
             break;
         }
@@ -412,7 +381,7 @@ public class TeleopMain extends OpMode
         robot.intakeGrip(intakegripping);
         robot.scoreGrip(scoregripping);
         robot.slide(sliding);
-        robot.horizslider.slide(intakesliding);
+        //robot.horizslider.slide(intakesliding);
         robot.wristSetPosition(wristing); 
         robot.intakepivot.pivot(armPosition);
         robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
@@ -425,7 +394,7 @@ public class TeleopMain extends OpMode
         telemetry.addData("STATE", "" + localState.toString());
         telemetry.addData("VL SLIDER", " h = %.2f, E = %.2f", robot.vertsliderL.getTargetExtension(), robot.vertsliderL.getExtension());
         telemetry.addData("VR SLIDER", " h = %.2f, E = %.2f", robot.vertsliderL.getTargetExtension(), robot.vertsliderR.getExtension());
-        telemetry.addData("H SLIDER", " l = %.2f, E = %.2f", intakesliding, robot.horizslider.getExtension());
+//        telemetry.addData("H SLIDER", " l = %.2f, E = %.2f", intakesliding, robot.horizslider.getExtension());
         telemetry.addData("WRIST", " a = %.2f", wristing);
         telemetry.addData("INTAKE ARM", " a = %.2f", robot.intakepivot.getAngle());
         telemetry.addData("GRIP INTAKE", " t = %.2f", intakegripping);

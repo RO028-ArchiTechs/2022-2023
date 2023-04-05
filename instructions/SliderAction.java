@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.instructions;
-import org.firstinspires.ftc.teamcode.Action;
-import org.firstinspires.ftc.teamcode.HardwareSlider;
+import org.firstinspires.ftc.teamcode.lib.Action;
+import org.firstinspires.ftc.teamcode.lib.HardwareSlider;
 
 public class SliderAction implements Action {
     

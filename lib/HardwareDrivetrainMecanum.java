@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.lib;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -21,7 +21,7 @@ public class HardwareDrivetrainMecanum
     private DcMotorEx backLeftDrive;
     private DcMotorEx backRightDrive;
     private double DRIVE_MULTIPLIER = 1.0;
-    private double STRAFE_MULTIPLIER = 0.7;  //ca sa nu mai rastoarne hans robotu
+    private double STRAFE_MULTIPLIER = 1.2;  //ca sa nu mai rastoarne hans robotu
     private double TURN_MULTIPLIER = 0.8;  //ca sa nu mai rastoarne hans robotu
 
      private double COUNTS_PER_MOTOR_REV;

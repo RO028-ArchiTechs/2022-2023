@@ -1,6 +1,6 @@
 
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.lib;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Gamepad;

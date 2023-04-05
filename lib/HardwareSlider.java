@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.lib;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -14,14 +14,12 @@ import java.util.*;
 public class HardwareSlider 
 {
     public DcMotor Slider;
-    private double SLIDE_POWER = 0.7;
+    private double SLIDE_POWER = 0.8;
     
     private double COUNTS_PER_MOTOR_REV;
     private double WINCH_RADIUS;
     private double COUNTS_PER_ARM_REV;
     private double COUNTS_PER_mm;
-    private HardwareMap hwMap;
-    public List<Double> positions = new ArrayList<>();
 
 
     public HardwareSlider()
@@ -29,33 +27,31 @@ public class HardwareSlider
         
     }
 
-    public HardwareSlider(HardwareMap hwMap, double COUNTS_PER_MOTOR_REV, double WINCH_RADIUS)
+    public HardwareSlider(DcMotor Slider, double COUNTS_PER_MOTOR_REV, double WINCH_RADIUS)
     {
         this.COUNTS_PER_MOTOR_REV = COUNTS_PER_MOTOR_REV;
         this.WINCH_RADIUS = WINCH_RADIUS;
-        this.hwMap = hwMap;
-        positions.add(0.0);     //intake
-        positions.add(150.0);   //coaster
-        positions.add(1100.0);  //low pole
-        positions.add(370.0);   //med pole
-        positions.add(1100.0);  //high pole
-        Slider = hwMap.get(DcMotor.class, "SL");
+        this.Slider = Slider;
         COUNTS_PER_mm = COUNTS_PER_MOTOR_REV /( WINCH_RADIUS * 2 * Math.PI);
-        Slider.setDirection(DcMotor.Direction.FORWARD);
-        Slider.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Slider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        Slider.setTargetPosition( 0);
+        Slider.setTargetPosition(0);
         Slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Slider.setPower(SLIDE_POWER);
     }
     
     public boolean isSliding() {
+        //  if you need to use this, you are very likely doing something really stupid
         return Slider.isBusy();
     }
     
     public double getExtension()
     {
         return (double)(Slider.getCurrentPosition()/COUNTS_PER_mm);
+        
+    }
+    public double getTargetExtension()
+    {
+        return (double)(Slider.getTargetPosition()/COUNTS_PER_mm);
         
     }
     public void slide(double pos)

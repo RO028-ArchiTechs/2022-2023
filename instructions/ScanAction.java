@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.instructions;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.State;
-import org.firstinspires.ftc.teamcode.Action;
-import org.firstinspires.ftc.teamcode.HardwareDrivetrainMecanum;
+import org.firstinspires.ftc.teamcode.lib.Action;
+import org.firstinspires.ftc.teamcode.lib.HardwareDrivetrainMecanum;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;

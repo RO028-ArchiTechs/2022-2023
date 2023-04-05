@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.lib;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -22,12 +22,14 @@ public class TestMotor extends LinearOpMode
 {
    
     private DcMotor Motor;
-    private double MAX_POWER = 0.2;
+    private double MAX_POWER = 0.4;
 
     @Override
     public void runOpMode()
     {
-        Motor = hardwareMap.get(DcMotor.class, "PV");
+        Motor = hardwareMap.get(DcMotor.class, "M");
+        Motor.setDirection(DcMotor.Direction.REVERSE);
+        
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
@@ -38,8 +40,6 @@ public class TestMotor extends LinearOpMode
             if (gamepad1.x){
                 Motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 Motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-                
             }
             Motor.setPower(-gamepad1.right_stick_y*MAX_POWER);
             telemetry.addData("Motor", "%d", Motor.getCurrentPosition());

@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.instructions;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.teamcode.Action;
-import org.firstinspires.ftc.teamcode.HardwarePivot;
+import org.firstinspires.ftc.teamcode.lib.Action;
+import org.firstinspires.ftc.teamcode.lib.HardwarePivot;
 
 
 public class PivotAction implements Action{
