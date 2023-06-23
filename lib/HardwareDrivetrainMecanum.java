@@ -9,11 +9,12 @@ import java.util.*;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+
 /*
  * This is NOT an opmode.
  */
 
-public class HardwareDrivetrainMecanum
+public class HardwareDrivetrainMecanum implements DrivetrainInterface 
 {
     /* Public OpMode members. */
     private DcMotorEx frontLeftDrive;
