@@ -30,21 +30,7 @@ public class BourneAgain extends OpMode
     private ElapsedTime runtime = new ElapsedTime();
    
     // Hardware declarations
-    private HardwareDrivetrainMecanum drivetrain;
-    private Servo intakeWristR;
-    private Servo intakeWristL;
-    private Servo intakeGripper;
-    private Servo scoringWrist;
-    private Servo scoringGripper;
-    private DcMotor intakeSliderMotorL;
-    private DcMotor intakeSliderMotorR;
-    private DcMotor scoringSliderMotorL;
-    private DcMotor scoringSliderMotorR;
-    
-    private HardwareSlider intakeSliderL;
-    private HardwareSlider intakeSliderR;
-    private HardwareSlider scoringSliderL;
-    private HardwareSlider scoringSliderR;
+    private HardwareRobot robot;
     
     // control channels
     private double intakeElevation = 0.0;
@@ -54,18 +40,6 @@ public class BourneAgain extends OpMode
     private double scoringGripping = 0.0;
     private double scoringElevation = 0.8;
     
-    // hardware constants -- can be public because we may use them in other places
-    
-    // parameter units
-    
-    // length units in mm (Milimeters)
-    public double COUNTS_PER_MOTOR_REV_goBilda = 1120.0;
-    public double COUNTS_PER_MOTOR_REV_Neverest40 = 384.5;
-    public double COUNTS_PER_MOTOR_REV_Neverest20 = 751.8;
-    public double COUNTS_PER_MOTOR_TNADO = 1440.0;
-    
-    public double DRIVE_GEAR_REDUCTION = 1.0;
-    public double WHEEL_CIRCUMFERENCE_MM_goBilda = 100.0 * Math.PI;
     
     // sensible defaults
     private double DRIVE_MULTIPLIER = 1.0;  // these 3 variables are used to prefferentially restrict movement speed on one axis or another; to alter the overall drive speed please change defSpeed.
@@ -102,40 +76,7 @@ public class BourneAgain extends OpMode
     @Override
     public void init()
     {
-        drivetrain = new HardwareDrivetrainMecanum(hardwareMap, COUNTS_PER_MOTOR_REV_goBilda, DRIVE_GEAR_REDUCTION, WHEEL_CIRCUMFERENCE_MM_goBilda); // legacy implementation !!
-        
-        intakeSliderMotorL = hardwareMap.get(DcMotor.class, "SHL");
-        intakeSliderMotorR = hardwareMap.get(DcMotor.class, "SHR");
-        intakeWristL = hardwareMap.get(Servo.class, "INL");
-        intakeWristR = hardwareMap.get(Servo.class, "INR");
-        intakeGripper = hardwareMap.get(Servo.class, "GRI");
-        
-        scoringSliderMotorL = hardwareMap.get(DcMotor.class, "SVL");
-        scoringSliderMotorR = hardwareMap.get(DcMotor.class, "SVR");
-        scoringGripper = hardwareMap.get(Servo.class, "GRS");
-        scoringWrist = hardwareMap.get(Servo.class, "SW");
-        
-        intakeWristL.setDirection(Servo.Direction.FORWARD);
-        intakeWristR.setDirection(Servo.Direction.REVERSE);
-        intakeGripper.setDirection(Servo.Direction.FORWARD);
-        intakeGripper.setDirection(Servo.Direction.FORWARD);
-        
-        intakeSliderMotorL.setDirection(DcMotor.Direction.FORWARD);  //determined using the right-hand-rule
-        intakeSliderMotorR.setDirection(DcMotor.Direction.FORWARD);  // CABLE SHENANIGANS
-        scoringSliderMotorL.setDirection(DcMotor.Direction.REVERSE); //determined using the right-hand-rule
-        scoringSliderMotorR.setDirection(DcMotor.Direction.FORWARD); //determined using the right-hand-rule
-        
-        intakeSliderL = new HardwareSlider(intakeSliderMotorL, 751.8, 16.0);
-        intakeSliderR = new HardwareSlider(intakeSliderMotorR, 751.8, 16.0);
-        
-        intakeSliderL.setLimits( 0.0, 290.0);
-        intakeSliderR.setLimits( 0.0, 290.0);
-        
-        scoringSliderL = new HardwareSlider(scoringSliderMotorL, 384.5, 18.0);
-        scoringSliderR = new HardwareSlider(scoringSliderMotorR, 384.5, 18.0);
-        
-        scoringSliderL.setLimits( 0.0, 1920.0);
-        scoringSliderR.setLimits( 0.0, 1920.0);
+        robot = new HardwareRobot(hardwareMap);
         
         telemetry.addData("Status", "Initialized");
         
@@ -163,7 +104,6 @@ public class BourneAgain extends OpMode
     @Override
     public void loop()
     {
-        
         // Drivetrain input on Gp1
         double drive  = -gamepad1.left_stick_y;
         double strafe =  gamepad1.left_stick_x;
@@ -179,9 +119,6 @@ public class BourneAgain extends OpMode
         copyGamepad(gamepad1, prevgamepad1);        
         
         
-        // sending calculated values to the hardware
-        drivetrain.DriveWPower(drivetrain.calcPower(drive, strafe, turn, speed));
-        
         intakeElevation = Range.clip(intakeElevation + 0.005* ((gamepad1.x ? 1.0 : 0.0)+(gamepad1.y ? -1.0 : 0.0)), 0.00, 0.56);
         intakeExtension = Range.clip(intakeExtension + 1.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 290.0);
         intakeGripping = (gamepad1.a ? 0.8 : (gamepad1.b ? 0.4: intakeGripping));
@@ -189,16 +126,19 @@ public class BourneAgain extends OpMode
         scoringExtension = Range.clip(scoringExtension + 1.5* ((gamepad2.dpad_up ? 1.0 : 0.0)+(gamepad2.dpad_down ? -1.0 : 0.0)), 0.0, 1900.0);
         scoringGripping = (gamepad2.a ? 0.8 : (gamepad2.b ? 0.4: scoringGripping));
         
-        intakeSliderL.slide(intakeExtension);
-        intakeSliderR.slide(intakeExtension);
-        intakeWristL.setPosition(intakeElevation);
-        intakeWristR.setPosition(intakeElevation);
-        intakeGripper.setPosition(intakeGripping);
+        // sending calculated values to the hardware
+        robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
         
-        scoringSliderL.slide(scoringExtension);
-        scoringSliderR.slide(scoringExtension);
-        scoringWrist.setPosition(scoringElevation);
-        scoringGripper.setPosition(scoringGripping);
+        robot.intakeSliderL.slide(intakeExtension);
+        robot.intakeSliderR.slide(intakeExtension);
+        robot.intakeWristL.setPosition(intakeElevation);
+        robot.intakeWristR.setPosition(intakeElevation);
+        robot.intakeGripper.setPosition(intakeGripping);
+        
+        robot.scoringSliderL.slide(scoringExtension);
+        robot.scoringSliderR.slide(scoringExtension);
+        robot.scoringWrist.setPosition(scoringElevation);
+        robot.scoringGripper.setPosition(scoringGripping);
         
         
         //printing useful (lol) information
