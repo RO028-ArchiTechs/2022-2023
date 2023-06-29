@@ -20,6 +20,9 @@ public class HardwareSlider
     private double WINCH_RADIUS;
     private double COUNTS_PER_ARM_REV;
     private double COUNTS_PER_mm;
+    
+    private double MIN_POSITION = 0.0;
+    private double MAX_POSITION = 69420.0; // this absurdly high number is here to keep backwards compatibility
 
 
     public HardwareSlider()
@@ -44,6 +47,12 @@ public class HardwareSlider
         return Slider.isBusy();
     }
     
+    public void setLimits( double lower, double upper)
+    {
+        this.MIN_POSITION = lower;
+        this.MAX_POSITION = upper;
+    }
+    
     public double getExtension()
     {
         return (double)(Slider.getCurrentPosition()/COUNTS_PER_mm);
@@ -56,7 +65,7 @@ public class HardwareSlider
     }
     public void slide(double pos)
     {
-        int target = (int)(pos * COUNTS_PER_mm);
+        int target = (int)(Range.clip(pos, MIN_POSITION, MAX_POSITION) * COUNTS_PER_mm);
         Slider.setTargetPosition(target);
     }
 }

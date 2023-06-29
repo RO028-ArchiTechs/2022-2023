@@ -125,7 +125,7 @@ public class TeleopMain extends OpMode
         scoregripping = 0.0;
         armPosition = robot.ARM_LOWER_POSITION;
         robot.armSetPosition(armPosition);
-//        robot.wristSetPosition(1.0);
+        robot.wristSetPosition(1.0);
         doDelay = true;
         initialDelayTime = runtime.time();
         
