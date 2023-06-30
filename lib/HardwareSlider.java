@@ -14,7 +14,7 @@ import java.util.*;
 public class HardwareSlider 
 {
     public DcMotor Slider;
-    private double SLIDE_POWER = 0.8;
+    private double SLIDE_POWER = 0.98;
     
     private double COUNTS_PER_MOTOR_REV;
     private double WINCH_RADIUS;

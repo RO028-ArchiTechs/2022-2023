@@ -32,6 +32,21 @@ public class BourneAgain extends OpMode
     // Hardware declarations
     private HardwareRobot robot;
     
+     enum MechState{ 
+        IDLE,   // state after initialisation
+        INTAKE, // H slider EXTENDED, inElev DOWN, inGrip OPEN 
+        I2T,    // Intake to transfer
+        TRANS,  // all sliders RETRACTED, inElev UP, inGrip CLOSED, scElev DOWN, scGrip CLOSED
+        T2S,    //Transfer to score
+        SCORE,  // V slider EXTENDED, scELEV UP, scGrip DOWN
+        
+    };
+    enum SleepState{
+        
+    }
+    private MechState localMechState;
+    private boolean transit;
+    
     // control channels
     private double intakeElevation = 0.0;
     private double intakeGripping = 0.8;
@@ -39,7 +54,6 @@ public class BourneAgain extends OpMode
     private double scoringExtension = 0.0;
     private double scoringGripping = 0.0;
     private double scoringElevation = 0.8;
-    
     
     // sensible defaults
     private double DRIVE_MULTIPLIER = 1.0;  // these 3 variables are used to prefferentially restrict movement speed on one axis or another; to alter the overall drive speed please change defSpeed.
@@ -77,13 +91,15 @@ public class BourneAgain extends OpMode
     public void init()
     {
         robot = new HardwareRobot(hardwareMap);
+        localMechState = MechState.IDLE;    
+        transit = false;
         
         telemetry.addData("Status", "Initialized");
         
         prevgamepad1 = new Gamepad();
         copyGamepad(gamepad1, prevgamepad1);
         
-        telemetry.addData("Say", "Mecanum test");
+        telemetry.addData("Say", "plm");
     }
 
     /*
@@ -107,24 +123,131 @@ public class BourneAgain extends OpMode
         // Drivetrain input on Gp1
         double drive  = -gamepad1.left_stick_y;
         double strafe =  gamepad1.left_stick_x;
-        double turn   = -gamepad1.right_stick_x;
+        double turn   =  gamepad1.right_stick_x;
         double boost  =  gamepad1.right_trigger;
         double shift  =  gamepad1.left_trigger;  
         // the speed formula https://www.desmos.com/calculator/cb6flvmdnv
         double speed =  (1 - boost - shift) * defSpeed + boost + minSpeed * shift;
         
+        ///*
+        switch(localMechState)
+        {
+            case IDLE:
+                intakeExtension = 0.0;
+                intakeElevation = 0.0;  //change this to intermediary position
+                intakeGripping = 0.8;
+                scoringExtension = 0.0;
+                scoringElevation = 0.15;
+                scoringGripping = 0.8;
+                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                {
+                    intakeExtension = 260.0;
+                    localMechState = MechState.INTAKE;
+                }
+                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                {
+                    localMechState = MechState.SCORE;
+                }
+            break;
+            
+            case INTAKE:
+                intakeExtension = Range.clip(intakeExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 290.0);
+                intakeElevation = 0.0;
+                intakeGripping = 0.8;
+                scoringExtension = 0.0;
+                scoringElevation = 0.15;
+                scoringGripping = 0.8;
+                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                {
+                    // HERE LIES THE PROBLEM
+                    intakeGripping = Range.clip(intakeGripping - 0.05, 0.0, 0.8);
+                    intakeExtension = 0.0;
+                    intakeElevation = 0.56;
+                    localMechState = MechState.I2T;
+                }
+                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                {
+                    localMechState = MechState.IDLE;
+                }
+            break;
+            
+            case I2T:
+                scoringElevation = 0.15;
+                intakeGripping = Range.clip(intakeGripping - 0.05, 0.0, 0.8);
+                if( intakeGripping < 0.1 ){
+                    intakeExtension = 0.0;
+                    intakeElevation = Range.clip(intakeGripping + 0.05, 0.0, 0.56);
+                    if (intakeElevation >= 0.56 ){
+                        scoringGripping = Range.clip(scoringGripping - 0.05, 0.4, 0.8);
+                        if (scoringGripping <= 0.4 ){
+                            localMechState = MechState.TRANS;
+                        }
+                    }
+                }
+                if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                {
+                    localMechState = MechState.INTAKE;
+                }
+            break;
+            
+            case TRANS:
+                //intakeExtension = 0.0;
+                //intakeElevation = 0.0;
+                //intakeGripping = 0.8;
+                //scoringExtension = 0.0;
+                //scoringElevation = 0.0;
+                //scoringGripping = 0.4;
+                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                {
+                    localMechState = MechState.T2S;
+                }
+                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                {
+                    localMechState = MechState.INTAKE;
+                }
+            break;
+            
+            case T2S:
+                intakeGripping = Range.clip(intakeGripping + 0.05, 0.0, 0.8);
+                if( intakeGripping >= 0.8 ){
+                    scoringElevation = 0.25;
+                    localMechState = MechState.SCORE;
+                }
+                
+            break;
+            
+            case SCORE:
+                //intakeExtension = 0.0;
+                //intakeElevation = 0.0;
+                //intakeGripping = 0.8;
+                scoringExtension = Range.clip(intakeExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 1920.0);
+                //scoringElevation = 0.0;
+                //scoringGripping = 0.8;
+                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                {
+                    scoringGripping = 0.8;
+                    localMechState = MechState.IDLE;
+                }
+                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                {
+                    localMechState = MechState.TRANS;
+                }
+            break;
+        }
+        //*/
         
         /* PLEASE KEEP ALL CONTROLLER READINGS ABOVE THIS LINE */
         // saving current gamepad state so we may compare against it n the next iteration        
         copyGamepad(gamepad1, prevgamepad1);        
         
-        
+        /*
         intakeElevation = Range.clip(intakeElevation + 0.005* ((gamepad1.x ? 1.0 : 0.0)+(gamepad1.y ? -1.0 : 0.0)), 0.00, 0.56);
         intakeExtension = Range.clip(intakeExtension + 1.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 290.0);
-        intakeGripping = (gamepad1.a ? 0.8 : (gamepad1.b ? 0.4: intakeGripping));
+        intakeGripping = (gamepad1.a ? 0.8 : (gamepad1.b ? 0.0: intakeGripping));
         scoringElevation = Range.clip(scoringElevation + 0.005* ((gamepad2.x ? 1.0 : 0.0)+(gamepad2.y ? -1.0 : 0.0)), 0.00, 1.0);
-        scoringExtension = Range.clip(scoringExtension + 1.5* ((gamepad2.dpad_up ? 1.0 : 0.0)+(gamepad2.dpad_down ? -1.0 : 0.0)), 0.0, 1900.0);
+        scoringExtension = Range.clip(scoringExtension + 80.5* ((gamepad2.dpad_up ? 1.0 : 0.0)+(gamepad2.dpad_down ? -1.0 : 0.0)), 0.0, 1900.0);
         scoringGripping = (gamepad2.a ? 0.8 : (gamepad2.b ? 0.4: scoringGripping));
+        */
         
         // sending calculated values to the hardware
         robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
@@ -140,9 +263,9 @@ public class BourneAgain extends OpMode
         robot.scoringWrist.setPosition(scoringElevation);
         robot.scoringGripper.setPosition(scoringGripping);
         
-        
         //printing useful (lol) information
         telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("STATE", localMechState.toString());
         telemetry.addData("IN ELEVATION", "%.2f", intakeElevation);
         telemetry.addData("IN GRIPPING", "%.3f", intakeGripping);
         telemetry.addData("H EXT", "%.2f", intakeExtension);

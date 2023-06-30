@@ -1,6 +1,6 @@
 #!/bin/bash
 
-find .  -not -name ".*" -print0 | xargs -0 -I {} rm -vrf {}
+rm -r *
 
 mv ~/w/org.zip .
 unzip org.zip
