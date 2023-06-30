@@ -44,7 +44,9 @@ public class BourneAgain extends OpMode
     enum SleepState{
         
     }
+    // control variables
     private MechState localMechState;
+    private int extensionIndex = 0;
     private boolean transit;
     
     // control channels
@@ -220,7 +222,24 @@ public class BourneAgain extends OpMode
                 //intakeExtension = 0.0;
                 //intakeElevation = 0.0;
                 //intakeGripping = 0.8;
+                if (gamepad1.left_bumper){
                 scoringExtension = Range.clip(intakeExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 1920.0);
+                }
+                else
+                {
+                    if (gamepad1.dpad_up && !prevgamepad1.dpad_up){
+                        extensionIndex += 1;
+                    } else if (gamepad1.dpad_down && !prevgamepad1.dpad_down){
+                        extensionIndex -= 1;
+                    }
+                    if (extensionIndex<0){
+                        extensionIndex=3;
+                    } else if (extensionIndex>3){
+                        extensionIndex=0;
+                    }
+                    
+                    scoringExtension = robot.positions.get(extensionIndex);
+                }
                 //scoringElevation = 0.0;
                 //scoringGripping = 0.8;
                 if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)

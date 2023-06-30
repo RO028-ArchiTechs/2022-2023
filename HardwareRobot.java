@@ -89,6 +89,11 @@ public class HardwareRobot
         scoringSliderL.setLimits( 0.0, 1920.0);
         scoringSliderR.setLimits( 0.0, 1920.0);
         
+        positions.add(0.0);
+        positions.add(100.0);
+        positions.add(200.0);
+        positions.add(400.0);
+        
     }
     
 }
