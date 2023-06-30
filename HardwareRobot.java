@@ -26,7 +26,7 @@ public class HardwareRobot
     private ServoImplEx WristScoringRightServo; 
     
     // mechanical components -- they have to be public cuz otherwise we can't use them
-    public HardwareDrivetrainMecanum drivetrain;
+    public DrivetrainInterface drivetrain;
     public HardwareSlider horizslider;
     public HardwareSlider vertsliderL;
     public HardwareSlider vertsliderR;

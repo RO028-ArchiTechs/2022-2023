@@ -9,12 +9,11 @@ import java.util.*;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-
 /*
  * This is NOT an opmode.
  */
 
-public class HardwareDrivetrainMecanum implements DrivetrainInterface 
+public class HardwareDrivetrainMecanum implements DrivetrainInterface
 {
     /* Public OpMode members. */
     private DcMotorEx frontLeftDrive;
@@ -25,12 +24,15 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
     private double STRAFE_MULTIPLIER = 1.2;  //ca sa nu mai rastoarne hans robotu
     private double TURN_MULTIPLIER = 0.8;  //ca sa nu mai rastoarne hans robotu
 
-     private double COUNTS_PER_MOTOR_REV;
-     private double DRIVE_GEAR_REDUCTION;
-     private double WHEEL_CIRCUMFERENCE_MM = 90.0 * Math.PI;
-     private double COUNTS_PER_WHEEL_REV;
-     private double COUNTS_PER_MM;
-     /**
+    private double COUNTS_PER_MOTOR_REV;
+    private double DRIVE_GEAR_REDUCTION;
+    private double WHEEL_CIRCUMFERENCE_MM = 90.0 * Math.PI;
+    private double COUNTS_PER_WHEEL_REV;
+    private double COUNTS_PER_MM;
+    private DRIVE_MODE drivewith;
+    private DRIVE_MODE stopwith;
+    private DRIVE_MODE drivemode;
+    /**
      Non-empty constructor
      */
      
@@ -106,8 +108,9 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
         backRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         
     }
-    public void DriveWVelocity(Map <String, Double> vector ) // velocity(ticks/second) 
+    public void DriveWVelocity(double drive, double strafe, double turn, double value) // velocity(ticks/second) 
     {
+        Map<String, Double> vector = calcVector(drive, strafe, turn, value)
         double tickspeed = 500.0;
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);        
         frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);
@@ -120,8 +123,9 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
         backRightDrive.setVelocity( (int)((double)vector.get("backRight")));
     }
     
-    public void DriveDistance(Map <String, Double> vector) // distance(milimiters)
+    public void DriveDistance(double drive, double strafe, double turn, double value) // distance(milimiters)
     {
+        Map<String, Double> vector = calcVector(drive, strafe, turn, vaue)
         double frontLeftDistance = (vector.get("frontLeft"));
         double frontRightDistance = (vector.get("frontRight"));
         double backLeftDistance = (vector.get("backLeft"));
@@ -163,9 +167,10 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
         backRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
     
-    public void DriveWPower(Map <String, Double> powers)
-
+    public void DriveWPower(double drive, double strafe, double turn, double value)
     {
+        Map<String, Double> powers = calcPower(drive, strafe, turn, value);
+
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -177,8 +182,65 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
         backLeftDrive.setPower(powers.get("backLeftPower"));
         
     }
-    
-    
+
+    @Override
+    public void Drive(double drive, double strafe, double turn, double value)
+    {
+        switch(drivewith)
+        {
+            case POWER:
+                DriveWPower(drive, strafe, turn, value);
+                break;
+            case VELOCITY:
+                DriveWVelocity(drive, strafe, turn, value);
+                break;
+            case DISTANCE:
+                DriveDistance(drive, strafe, turn, value);
+                break;
+            case ODOMETRY:
+                telemetry.addData("Say", "No, I refuse.");
+                break;
+        }
+            
+    }
+    @Override
+    public void Stop(double drive, double strafe, double turn, double value)
+    {
+        switch(stopwith)
+        {
+            case POWER:
+                DriveWPower(0.0, 0.0, 0.0, 0.0);
+                break;
+            case VELOCITY:
+                DriveWVelocity(0.0, 0.0, 0.0, 0.0);
+                break;
+            case DISTANCE:
+                DriveDistance(0.0, 0.0, 0.0, 0.0);
+                break;
+            case ODOMETRY:
+                telemetry.addData("Say", "No, I refuse.");
+                break;
+        }
+     
+    }
+    @Override
+    public void setDriveMode(DRIVE_MODE drivewith){
+        this.drivewith = drivewith;
+    }
+
+    @Override
+    public void setStopMode(DRIVE_MODE stopwith){
+        this.stopwith = stopwith;
+    }
+
+    @Override
+    public void setMode(DRIVE_MODE drivemode){
+        this.drivemode = drivemode;
+        drivewith = drivemode;
+        stopwith = drivemode;
+    }
+
+
     public Map<String, Integer>getEncoderValues()
     {
         Map<String, Integer> vector = new HashMap<>();

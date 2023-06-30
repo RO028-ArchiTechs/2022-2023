@@ -50,9 +50,11 @@ public class TeleopMainSliderless extends OpMode
     
     enum Mode {AUTO, MANUAL}; 
     enum State {INTAKE, TRANSFER, SCORE}; 
-    
+    enum DriveMode {POWER, VELOCITY, DISTANCE, ODOMETRY};
+
     private Mode localMode; 
     private State localState; 
+    private DriveMode localDrive;
     private double sliding;     //milimeters
     private double intakesliding;     //milimeters
     private double intakegripping;    //parametric
@@ -129,6 +131,7 @@ public class TeleopMainSliderless extends OpMode
         
         telemetry.addData("Say", "To infinity and beyond!");
         localMode = Mode.MANUAL;
+        robot.setMode(robot.drivetrain.DRIVE_MODE.POWER)
     }
     
     private double multiplier(boolean increase, boolean decrease)
@@ -384,7 +387,7 @@ public class TeleopMainSliderless extends OpMode
         //robot.horizslider.slide(intakesliding);
         robot.wristSetPosition(wristing); 
         robot.intakepivot.pivot(armPosition);
-        robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
+        robot.drivetrain.Drive(drive, strafe, turn, speed);
         
         // robot.slide(100.0);
         

@@ -33,7 +33,7 @@ public class DriveAction implements Action {
     private double strafe;
     private double turn;
     private double power;
-    private HardwareDrivetrainMecanum localDrivetrain;
+    private DrivetrainInterface localDrivetrain;
     
     public DriveAction(double drive, double strafe, double turn, double power, HardwareDrivetrainMecanum localDrivetrain){
 //  ^^^ YES, apparently we DO need to make the constructor public if we store this class in a different folder.
@@ -46,6 +46,7 @@ public class DriveAction implements Action {
     
     @Override
     public Status execute(){
+        localDrivetrain.setMode(localDrivetrain.DRIVE_MODE.POWER)
         switch(status){
             case IDLE:
                 localDrivetrain.DriveDistance(localDrivetrain.calcVector(drive, strafe, turn, power));
