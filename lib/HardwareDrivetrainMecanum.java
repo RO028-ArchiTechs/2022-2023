@@ -29,8 +29,6 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
     private double WHEEL_CIRCUMFERENCE_MM = 90.0 * Math.PI;
     private double COUNTS_PER_WHEEL_REV;
     private double COUNTS_PER_MM;
-    private DRIVE_MODE drivewith;
-    private DRIVE_MODE stopwith;
     private DRIVE_MODE drivemode;
     /**
      Non-empty constructor
@@ -202,37 +200,7 @@ public class HardwareDrivetrainMecanum implements DrivetrainInterface
                 break;
         }
             
-    }
-    @Override
-    public void Stop(double drive, double strafe, double turn, double value)
-    {
-        switch(stopwith)
-        {
-            case POWER:
-                DriveWPower(0.0, 0.0, 0.0, 0.0);
-                break;
-            case VELOCITY:
-                DriveWVelocity(0.0, 0.0, 0.0, 0.0);
-                break;
-            case DISTANCE:
-                DriveDistance(0.0, 0.0, 0.0, 0.0);
-                break;
-            case ODOMETRY:
-                telemetry.addData("Say", "No, I refuse.");
-                break;
-        }
-     
-    }
-    @Override
-    public void setDriveMode(DRIVE_MODE drivewith){
-        this.drivewith = drivewith;
-    }
-
-    @Override
-    public void setStopMode(DRIVE_MODE stopwith){
-        this.stopwith = stopwith;
-    }
-
+    }    
     @Override
     public void setMode(DRIVE_MODE drivemode){
         this.drivemode = drivemode;
