@@ -90,9 +90,9 @@ public class HardwareRobot
         scoringSliderR.setLimits( 0.0, 1920.0);
         
         positions.add(0.0);
-        positions.add(100.0);
-        positions.add(200.0);
-        positions.add(400.0);
+        positions.add(190.0);
+        positions.add(975.0);
+        positions.add(1695.0);
         
     }
     

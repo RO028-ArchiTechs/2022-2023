@@ -48,6 +48,7 @@ public class BourneAgain extends OpMode
     private MechState localMechState;
     private int extensionIndex = 0;
     private boolean transit;
+    private int stateQ = 0;
     
     // control channels
     private double intakeElevation = 0.0;
@@ -122,73 +123,90 @@ public class BourneAgain extends OpMode
     @Override
     public void loop()
     {
+                //  E-E-E-EJECT!!!!!!
+        if( gamepad1.a&&gamepad1.b&&gamepad1.x&&gamepad1.y || gamepad2.a&&gamepad2.b&&gamepad2.x&&gamepad2.y )
+        {
+            telemetry.addData("EMERGENCY STOP", "%s", "plm");
+            stop(); // unfortunately this does nothing, idk why
+            // THE BELOW LINE CAUSES A SEGFAULT (NPE) ON PURPOSE
+            telemetry.addData("INVALID INDEX", "%.2f", robot.positions.get(-1));
+            // This is done to protect the robot from destroying itself
+            // in the event that an encoder cable
+        }
+
         // Drivetrain input on Gp1
-        double drive  = -gamepad1.left_stick_y;
-        double strafe =  gamepad1.left_stick_x;
-        double turn   =  gamepad1.right_stick_x;
-        double boost  =  gamepad1.right_trigger;
-        double shift  =  gamepad1.left_trigger;  
+        double drive  = -gamepad2.left_stick_y;
+        double strafe =  gamepad2.left_stick_x;
+        double turn   =  gamepad2.right_stick_x;
+        double boost  =  (intakeExtension > 100.0 ? 0.0 : gamepad2.right_trigger);
+        double shift  =  gamepad2.left_trigger;  
         // the speed formula https://www.desmos.com/calculator/cb6flvmdnv
         double speed =  (1 - boost - shift) * defSpeed + boost + minSpeed * shift;
         
+        if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+        {
+            stateQ ++;
+        }
+        if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+        {
+            stateQ --;
+        }
         ///*
         switch(localMechState)
         {
             case IDLE:
                 intakeExtension = 0.0;
-                intakeElevation = 0.0;  //change this to intermediary position
+                intakeElevation = 0.24;  //change this to intermediary position
                 intakeGripping = 0.8;
                 scoringExtension = 0.0;
-                scoringElevation = 0.15;
+                scoringElevation = 0.24;
                 scoringGripping = 0.8;
-                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                if ( stateQ > 0)
                 {
                     intakeExtension = 260.0;
                     localMechState = MechState.INTAKE;
+                    stateQ--;
                 }
-                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                else if ( stateQ < 0)
                 {
                     localMechState = MechState.SCORE;
+                    stateQ++;
                 }
             break;
             
             case INTAKE:
                 intakeExtension = Range.clip(intakeExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 290.0);
-                intakeElevation = 0.0;
-                intakeGripping = 0.8;
+                intakeElevation = (gamepad1.left_bumper ? 0.15 : 0.0);
+                intakeGripping = (gamepad1.x ? 0.0 : (gamepad1.y ? 0.8 : intakeGripping));
                 scoringExtension = 0.0;
-                scoringElevation = 0.15;
+                scoringElevation = 0.24;
                 scoringGripping = 0.8;
-                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                if ( stateQ > 0)
                 {
-                    // HERE LIES THE PROBLEM
-                    intakeGripping = Range.clip(intakeGripping - 0.05, 0.0, 0.8);
-                    intakeExtension = 0.0;
-                    intakeElevation = 0.56;
                     localMechState = MechState.I2T;
+                    stateQ--;
                 }
-                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                else if ( stateQ < 0)
                 {
                     localMechState = MechState.IDLE;
+                    stateQ ++;
                 }
             break;
             
             case I2T:
                 scoringElevation = 0.15;
-                intakeGripping = Range.clip(intakeGripping - 0.05, 0.0, 0.8);
-                if( intakeGripping < 0.1 ){
+                intakeElevation = Range.clip(intakeElevation + 0.05, 0.0, 0.57);
+                if (intakeElevation >= 0.56 ){
                     intakeExtension = 0.0;
-                    intakeElevation = Range.clip(intakeGripping + 0.05, 0.0, 0.56);
-                    if (intakeElevation >= 0.56 ){
-                        scoringGripping = Range.clip(scoringGripping - 0.05, 0.4, 0.8);
-                        if (scoringGripping <= 0.4 ){
-                            localMechState = MechState.TRANS;
-                        }
+                    scoringGripping = Range.clip(scoringGripping - 0.01, 0.35, 0.8);
+                    if (scoringGripping <= 0.35 ){
+                        localMechState = MechState.T2S;
                     }
                 }
-                if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                if ( stateQ < 0)
                 {
                     localMechState = MechState.INTAKE;
+                    stateQ ++;
                 }
             break;
             
@@ -199,21 +217,26 @@ public class BourneAgain extends OpMode
                 //scoringExtension = 0.0;
                 //scoringElevation = 0.0;
                 //scoringGripping = 0.4;
-                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                if ( stateQ > 0)
                 {
                     localMechState = MechState.T2S;
+                    stateQ --;
                 }
-                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                else if ( stateQ < 0)
                 {
                     localMechState = MechState.INTAKE;
+                    stateQ ++;
                 }
             break;
             
             case T2S:
-                intakeGripping = Range.clip(intakeGripping + 0.05, 0.0, 0.8);
+                intakeGripping = Range.clip(intakeGripping + 0.01, 0.0, 0.8);
                 if( intakeGripping >= 0.8 ){
-                    scoringElevation = 0.25;
+                    scoringElevation = Range.clip(scoringElevation + 0.05 ,0.0, 0.85);
+                    if( scoringElevation >= 0.85 ){
+                    extensionIndex = 0;
                     localMechState = MechState.SCORE;
+                    }
                 }
                 
             break;
@@ -222,8 +245,9 @@ public class BourneAgain extends OpMode
                 //intakeExtension = 0.0;
                 //intakeElevation = 0.0;
                 //intakeGripping = 0.8;
+                scoringGripping = (gamepad1.x ? 0.4 : (gamepad1.y ? 0.8 : scoringGripping));
                 if (gamepad1.left_bumper){
-                scoringExtension = Range.clip(intakeExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 1920.0);
+                scoringExtension = Range.clip(scoringExtension + 2.5* ((gamepad1.dpad_up ? 1.0 : 0.0)+(gamepad1.dpad_down ? -1.5 : 0.0)), 0.0, 1920.0);
                 }
                 else
                 {
@@ -233,23 +257,25 @@ public class BourneAgain extends OpMode
                         extensionIndex -= 1;
                     }
                     if (extensionIndex<0){
-                        extensionIndex=3;
-                    } else if (extensionIndex>3){
                         extensionIndex=0;
+                    } else if (extensionIndex>3){
+                        extensionIndex=3;
                     }
                     
                     scoringExtension = robot.positions.get(extensionIndex);
                 }
                 //scoringElevation = 0.0;
                 //scoringGripping = 0.8;
-                if ( gamepad1.dpad_right && !prevgamepad1.dpad_right)
+                if ( stateQ > 0)
                 {
-                    scoringGripping = 0.8;
+                    //scoringGripping = 0.8;
                     localMechState = MechState.IDLE;
+                    stateQ --;
                 }
-                else if ( gamepad1.dpad_left && !prevgamepad1.dpad_left)
+                else if ( stateQ < 0)
                 {
                     localMechState = MechState.TRANS;
+                    stateQ ++;
                 }
             break;
         }
@@ -270,9 +296,12 @@ public class BourneAgain extends OpMode
         
         // sending calculated values to the hardware
         robot.drivetrain.DriveWPower(robot.drivetrain.calcPower(drive, strafe, turn, speed));
-        
+        /*
         robot.intakeSliderL.slide(intakeExtension);
         robot.intakeSliderR.slide(intakeExtension);
+        */
+        robot.intakeSliderL.slide(0.0);
+        robot.intakeSliderR.slide(0.0);
         robot.intakeWristL.setPosition(intakeElevation);
         robot.intakeWristR.setPosition(intakeElevation);
         robot.intakeGripper.setPosition(intakeGripping);
