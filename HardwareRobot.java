@@ -19,7 +19,7 @@ public class HardwareRobot
     private DcMotor intakeSliderMotorR;
     private DcMotor scoringSliderMotorL;
     private DcMotor scoringSliderMotorR;
-    
+    //"e"
     // mechanical components -- they have to be public cuz otherwise we can't use them
     public Servo intakeWristR;
     public Servo intakeWristL;
